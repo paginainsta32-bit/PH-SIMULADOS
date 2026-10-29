@@ -1,0 +1,371 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PH Simulados - Agente de Trânsito (Padrão Ceará)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between font-sans">
+
+    <!-- CABEÇALHO -->
+    <header class="bg-slate-800 border-b border-slate-700 shadow-md p-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            
+            <!-- LOGO / NOME DO SISTEMA -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-black text-lg shadow">
+                    PH
+                </div>
+                <div>
+                    <h1 class="text-xl font-black tracking-wide text-white flex items-center gap-2">
+                        PH <span class="text-amber-400">SIMULADOS</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium">Agente de Trânsito • Padrão Bancas do Ceará</p>
+                </div>
+            </div>
+
+            <!-- CRONÔMETRO E BOTÃO -->
+            <div id="header-timer" class="hidden items-center gap-4">
+                <div class="bg-slate-900 px-4 py-2 rounded-lg border border-slate-700 flex items-center gap-2">
+                    <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Tempo Restante:</span>
+                    <span id="timer-display" class="text-xl font-mono font-bold text-amber-400">03:30:00</span>
+                </div>
+                <button onclick="finalizarSimulado()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow">
+                    Finalizar Prova
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="max-w-7xl w-full mx-auto p-4 sm:p-6 flex-grow flex flex-col">
+
+        <!-- TELA INICIAL / BOAS VINDAS -->
+        <div id="screen-start" class="my-auto max-w-xl mx-auto bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-xl text-center">
+            <div class="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl font-bold border border-amber-500/20 shadow-inner">
+                🚦
+            </div>
+            <h2 class="text-2xl font-black tracking-tight mb-1 text-white">PH SIMULADOS</h2>
+            <p class="text-xs font-semibold text-amber-400 uppercase tracking-widest mb-4">Concurso Agente de Trânsito</p>
+            
+            <p class="text-slate-300 text-sm mb-6 leading-relaxed">
+                O sistema selecionará aleatoriamente **50 questões** do nosso banco completo para montar um simulado exclusivo no padrão das bancas do Ceará.
+            </p>
+
+            <div class="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50 text-left mb-6 text-sm space-y-2 text-slate-300">
+                <div class="flex justify-between"><span>Questões por Simulado:</span> <strong class="text-white">50 Questões</strong></div>
+                <div class="flex justify-between"><span>Tempo Limite:</span> <strong class="text-white">3 Horas e 30 Minutos</strong></div>
+                <div class="flex justify-between"><span>Banco Disponível:</span> <strong id="total-pool" class="text-amber-400">Carregando...</strong></div>
+            </div>
+
+            <button onclick="iniciarSimulado()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3.5 px-6 rounded-xl transition shadow-lg text-base">
+                Gerar e Iniciar Simulado
+            </button>
+        </div>
+
+        <!-- TELA DA PROVA -->
+        <div id="screen-quiz" class="hidden grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+            
+            <!-- CAIXA DA QUESTÃO -->
+            <div class="lg:col-span-3 bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl flex flex-col justify-between min-h-[480px]">
+                <div>
+                    <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
+                        <span id="q-number" class="text-xs font-bold uppercase tracking-wider bg-slate-900 text-amber-400 px-3 py-1 rounded-full border border-slate-700">
+                            Questão 1 de 50
+                        </span>
+                        <span id="q-subject" class="text-xs text-slate-400 font-medium">Legislação de Trânsito</span>
+                    </div>
+
+                    <p id="q-text" class="text-slate-200 text-base sm:text-lg mb-6 leading-relaxed">
+                        Carregando enunciado...
+                    </p>
+
+                    <div id="q-options" class="space-y-3"></div>
+                </div>
+
+                <div class="flex justify-between items-center mt-8 pt-4 border-t border-slate-700">
+                    <button onclick="questaoAnterior()" id="btn-prev" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium px-5 py-2.5 rounded-xl text-sm transition disabled:opacity-40 disabled:cursor-not-allowed">
+                        ← Anterior
+                    </button>
+                    <button onclick="proximaQuestao()" id="btn-next" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-2.5 rounded-xl text-sm transition">
+                        Próxima →
+                    </button>
+                </div>
+            </div>
+
+            <!-- PAINEL LATERAL: GRADE -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
+                <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3">Cartão-Resposta</h3>
+                <p class="text-xs text-slate-400 mb-4">Navegue pelas questões:</p>
+                
+                <div id="grid-nav" class="grid grid-cols-5 gap-2 max-h-[360px] overflow-y-auto pr-1"></div>
+
+                <div class="mt-5 pt-4 border-t border-slate-700 text-xs text-slate-400 space-y-2">
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-amber-500 inline-block"></span> Atual</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-emerald-600 inline-block"></span> Respondida</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-slate-700 inline-block"></span> Em branco</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TELA DE RESULTADO -->
+        <div id="screen-result" class="hidden my-auto max-w-3xl mx-auto bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-xl">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-3xl font-bold border border-emerald-500/20">
+                    🏆
+                </div>
+                <h2 class="text-2xl font-bold mb-1">Simulado Concluído!</h2>
+                <p class="text-slate-400 text-sm">Confira seu desempenho detalhado abaixo.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700 text-center">
+                    <span class="text-xs text-slate-400 uppercase tracking-wider block mb-1">Aproveitamento</span>
+                    <span id="res-percent" class="text-3xl font-black text-amber-400">0%</span>
+                </div>
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700 text-center">
+                    <span class="text-xs text-slate-400 uppercase tracking-wider block mb-1">Acertos / Erros</span>
+                    <span id="res-score" class="text-2xl font-bold text-slate-200">0 / 0</span>
+                </div>
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700 text-center">
+                    <span class="text-xs text-slate-400 uppercase tracking-wider block mb-1">Tempo Gasto</span>
+                    <span id="res-time" class="text-2xl font-mono font-bold text-slate-200">00:00</span>
+                </div>
+            </div>
+
+            <h3 class="font-bold text-lg mb-4 text-slate-200 border-b border-slate-700 pb-2">Gabarito Comentado</h3>
+            <div id="res-details" class="space-y-4 max-h-[400px] overflow-y-auto pr-2 mb-6"></div>
+
+            <button onclick="location.reload()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 px-6 rounded-xl transition shadow text-base">
+                Gerar Novo Simulado (Outras Questões)
+            </button>
+        </div>
+
+    </main>
+
+    <!-- IMPORTAÇÃO DO BANCO DE DADOS DE QUESTÕES -->
+    <script src="questoes.js"></script>
+
+    <!-- LÓGICA DO SIMULADO -->
+    <script>
+        window.onload = function() {
+            if (typeof todasAsQuestoes !== 'undefined') {
+                document.getElementById('total-pool').innerText = `${todasAsQuestoes.length} Questões no Banco`;
+            } else {
+                document.getElementById('total-pool').innerText = `Erro ao carregar questoes.js`;
+            }
+        };
+
+        let prova = [];
+        let indiceAtual = 0;
+        let respostasUsuario = {};
+        let tempoRestante = 3 * 3600 + 30 * 60; // 3h30m
+        let timerInterval = null;
+        let tempoInicio = 0;
+
+        function iniciarSimulado() {
+            if (typeof todasAsQuestoes === 'undefined' || todasAsQuestoes.length === 0) {
+                alert("Erro: O arquivo questoes.js não foi carregado corretamente.");
+                return;
+            }
+
+            let poolCopia = [...todasAsQuestoes].sort(() => Math.random() - 0.5);
+            let qtdParaSortear = Math.min(50, poolCopia.length);
+            prova = poolCopia.slice(0, qtdParaSortear);
+
+            respostasUsuario = {};
+            indiceAtual = 0;
+            tempoInicio = Date.now();
+
+            document.getElementById('screen-start').classList.add('hidden');
+            document.getElementById('screen-quiz').classList.remove('hidden');
+            document.getElementById('header-timer').classList.remove('hidden');
+            document.getElementById('header-timer').classList.add('flex');
+
+            iniciarCronometro();
+            renderizarQuestao();
+            renderizarGridNav();
+        }
+
+        function iniciarCronometro() {
+            timerInterval = setInterval(() => {
+                tempoRestante--;
+                let horas = Math.floor(tempoRestante / 3600);
+                let minutos = Math.floor((tempoRestante % 3600) / 60);
+                let segundos = tempoRestante % 60;
+
+                document.getElementById('timer-display').innerText = 
+                    `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+
+                if (tempoRestante <= 0) {
+                    clearInterval(timerInterval);
+                    alert("O tempo esgotou! O simulado será finalizado.");
+                    finalizarSimulado();
+                }
+            }, 1000);
+        }
+
+        function renderizarQuestao() {
+            let q = prova[indiceAtual];
+            document.getElementById('q-number').innerText = `Questão ${indiceAtual + 1} de ${prova.length}`;
+            document.getElementById('q-subject').innerText = q.materia;
+            document.getElementById('q-text').innerText = q.enunciado;
+
+            let containerOpcoes = document.getElementById('q-options');
+            containerOpcoes.innerHTML = '';
+
+            let letras = ['A', 'B', 'C', 'D', 'E'];
+            q.opcoes.forEach((opcao, idx) => {
+                let selecionada = respostasUsuario[indiceAtual] === idx;
+                let bgClass = selecionada ? 'bg-amber-500/20 border-amber-500 text-amber-200' : 'bg-slate-900/60 border-slate-700 hover:border-slate-500 text-slate-300';
+                
+                let div = document.createElement('div');
+                div.className = `p-4 rounded-xl border cursor-pointer transition flex items-start gap-3 ${bgClass}`;
+                div.innerHTML = `
+                    <span class="font-bold text-amber-400 mt-0.5">${letras[idx]})</span>
+                    <span class="flex-grow">${opcao}</span>
+                `;
+                div.onclick = () => selecionarAlternativa(idx);
+                containerOpcoes.appendChild(div);
+            });
+
+            document.getElementById('btn-prev').disabled = indiceAtual === 0;
+            let btnNext = document.getElementById('btn-next');
+            if (indiceAtual === prova.length - 1) {
+                btnNext.innerText = "Revisar / Finalizar";
+                btnNext.onclick = finalizarSimulado;
+            } else {
+                btnNext.innerText = "Próxima →";
+                btnNext.onclick = proximaQuestao;
+            }
+
+            atualizarGridNav();
+        }
+
+        function selecionarAlternativa(idxOpcao) {
+            respostasUsuario[indiceAtual] = idxOpcao;
+            renderizarQuestao();
+        }
+
+        function proximaQuestao() {
+            if (indiceAtual < prova.length - 1) {
+                indiceAtual++;
+                renderizarQuestao();
+            }
+        }
+
+        function questaoAnterior() {
+            if (indiceAtual > 0) {
+                indiceAtual--;
+                renderizarQuestao();
+            }
+        }
+
+        function irParaQuestao(idx) {
+            indiceAtual = idx;
+            renderizarQuestao();
+        }
+
+        function renderizarGridNav() {
+            let grid = document.getElementById('grid-nav');
+            grid.innerHTML = '';
+            for (let i = 0; i < prova.length; i++) {
+                let btn = document.createElement('button');
+                btn.id = `nav-btn-${i}`;
+                btn.className = 'w-9 h-9 rounded-lg font-mono text-xs font-bold border border-slate-700 transition flex items-center justify-center bg-slate-900 text-slate-300';
+                btn.innerText = i + 1;
+                btn.onclick = () => irParaQuestao(i);
+                grid.appendChild(btn);
+            }
+            atualizarGridNav();
+        }
+
+        function atualizarGridNav() {
+            for (let i = 0; i < prova.length; i++) {
+                let btn = document.getElementById(`nav-btn-${i}`);
+                if (!btn) continue;
+                
+                btn.className = 'w-9 h-9 rounded-lg font-mono text-xs font-bold border transition flex items-center justify-center ';
+                
+                if (i === indiceAtual) {
+                    btn.className += 'bg-amber-500 text-slate-950 border-amber-400 ring-2 ring-amber-500/50';
+                } else if (respostasUsuario[i] !== undefined) {
+                    btn.className += 'bg-emerald-600 text-white border-emerald-500';
+                } else {
+                    btn.className += 'bg-slate-900 text-slate-400 border-slate-700 hover:border-slate-500';
+                }
+            }
+        }
+
+        function finalizarSimulado() {
+            let naoRespondidas = prova.length - Object.keys(respostasUsuario).length;
+            if (naoRespondidas > 0) {
+                if (!confirm(`Você ainda tem ${naoRespondidas} questão(ões) sem resposta. Deseja finalizar mesmo assim?`)) {
+                    return;
+                }
+            }
+
+            clearInterval(timerInterval);
+            document.getElementById('screen-quiz').classList.add('hidden');
+            document.getElementById('header-timer').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+
+            let acertos = 0;
+            let erros = 0;
+            let letras = ['A', 'B', 'C', 'D', 'E'];
+
+            prova.forEach((q, i) => {
+                if (respostasUsuario[i] === q.correta) {
+                    acertos++;
+                } else {
+                    erros++;
+                }
+            });
+
+            let percentual = Math.round((acertos / prova.length) * 100);
+            let tempoGastoSegs = Math.floor((Date.now() - tempoInicio) / 1000);
+            let tMin = Math.floor(tempoGastoSegs / 60);
+            let tSeg = tempoGastoSegs % 60;
+
+            document.getElementById('res-percent').innerText = `${percentual}%`;
+            document.getElementById('res-score').innerText = `${acertos} Acertos / ${erros} Erros`;
+            document.getElementById('res-time').innerText = `${String(tMin).padStart(2, '0')}:${String(tSeg).padStart(2, '0')}`;
+
+            let containerDetails = document.getElementById('res-details');
+            containerDetails.innerHTML = '';
+
+            prova.forEach((q, i) => {
+                let userResp = respostasUsuario[i];
+                let acertou = userResp === q.correta;
+                let statusColor = acertou ? 'border-emerald-500/40 bg-emerald-950/20' : 'border-rose-500/40 bg-rose-950/20';
+                let badgeColor = acertou ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border-rose-500/30';
+                let statusText = acertou ? 'Correto' : 'Incorreto';
+
+                let userRespStr = userResp !== undefined ? `${letras[userResp]}) ${q.opcoes[userResp]}` : 'Não respondida';
+                let corretaStr = `${letras[q.correta]}) ${q.opcoes[q.correta]}`;
+
+                let div = document.createElement('div');
+                div.className = `p-4 rounded-xl border ${statusColor} text-sm space-y-2`;
+                div.innerHTML = `
+                    <div class="flex justify-between items-center font-bold">
+                        <span class="text-slate-200">Questão ${i + 1} (${q.materia})</span>
+                        <span class="px-2.5 py-0.5 rounded text-xs border ${badgeColor}">${statusText}</span>
+                    </div>
+                    <p class="text-slate-300 font-medium">${q.enunciado}</p>
+                    <div class="text-xs space-y-1 pt-1 text-slate-400">
+                        <div>Sua resposta: <strong class="${acertou ? 'text-emerald-400' : 'text-rose-400'}">${userRespStr}</strong></div>
+                        <div>Gabarito correto: <strong class="text-emerald-400">${corretaStr}</strong></div>
+                    </div>
+                    <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700/60 text-xs text-slate-300 mt-2">
+                        <strong class="text-amber-400 block mb-1">Comentário da Banca:</strong>
+                        ${q.comentario}
+                    </div>
+                `;
+                containerDetails.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
